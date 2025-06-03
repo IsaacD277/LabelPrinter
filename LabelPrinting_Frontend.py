@@ -1,29 +1,32 @@
 import tkinter as tk
-from tkinter import ttk
 import customtkinter as ctk
 import os
-from PIL import Image
+import LabelPrinting_Backend as backend
 
 ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
 
-class ModernApp:
+class LabelPrinterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("ETS Equipment Sheet Printing")
+        self.root.geometry("1000x700")
         self.root.attributes('-fullscreen', False)
         
         self.setting1 = tk.StringVar()
         self.setting2 = tk.StringVar()
         self.setting3 = tk.StringVar()
+        self.setting4 = tk.StringVar()
+        self.setting5 = tk.StringVar()
+        self.setting6 = tk.StringVar()
         self.checkbox_var = tk.BooleanVar(value=True)
         self.device_var = tk.StringVar(value="Normal")
         
+        # Sets up the up and down arrow history navigation
         self.input_history = []
-        self.history_index = None  # None = not currently navigating history
+        self.history_index = None
 
         self.root.bind("<Escape>", lambda event: self.toggle_fullscreen(full=True))
-        self.root.bind("<F11>", lambda event: self.toggle_fullscreen(full=False))
 
         self.success_label = None
         
@@ -32,11 +35,10 @@ class ModernApp:
         
         self.settings_frame.place_forget()
 
-        self.laptop_icon = ctk.CTkImage(light_image=Image.open("laptop.png"), size=(24, 24))
-        self.box_icon = ctk.CTkImage(light_image=Image.open("box.png"), size=(24, 24))
+        baseUrl, headers, baseDir = backend.initialize()
         
     def create_main_frame(self):
-        self.main_frame = ctk.CTkFrame(self.root, corner_radius=0)
+        self.main_frame = ctk.CTkFrame(self.root, corner_radius=10)
         self.main_frame.pack(fill="both", expand=True)
         
         header_frame = ctk.CTkFrame(self.main_frame, corner_radius=0, fg_color="transparent")
@@ -77,7 +79,7 @@ class ModernApp:
             input_frame,
             width=250,
             height=62,
-            placeholder_text="0000000",
+            placeholder_text="3965678",
             font=ctk.CTkFont(size=36),
             justify="center"
         )
@@ -125,10 +127,10 @@ class ModernApp:
         self.input_entry.focus_set()
         
     def create_settings_frame(self):
-        self.settings_frame = ctk.CTkFrame(self.root, corner_radius=10)
+        self.settings_frame = ctk.CTkFrame(self.root, corner_radius=10, fg_color="#494949")
         self.settings_frame.place(relx=0.5, rely=0.5, relwidth=0.8, relheight=0.8, anchor="center")
         
-        settings_header = ctk.CTkFrame(self.settings_frame, corner_radius=0, fg_color="transparent")
+        settings_header = ctk.CTkFrame(self.settings_frame, corner_radius=10, fg_color="transparent")
         settings_header.pack(fill="x", padx=20, pady=20)
         
         settings_title = ctk.CTkLabel(
@@ -143,7 +145,7 @@ class ModernApp:
             text="X",
             width=30,
             height=30,
-            corner_radius=15,
+            corner_radius=10,
             command=lambda: self.settings_frame.place_forget()
         )
         close_button.pack(side="right")
@@ -153,6 +155,9 @@ class ModernApp:
         
         settings = [
             ("Printer Name:", self.setting1),
+            ("Laptop Template Name:", self.setting4),
+            ("Normal Template Name:", self.setting5),
+            ("Completed File Name:", self.setting6),
             ("API Public Key:", self.setting2),
             ("API Private Key:", self.setting3),
         ]
@@ -191,12 +196,24 @@ class ModernApp:
     def toggle_settings(self):
         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
         try:
-            # Read the current printer_name from config.py
+            fullscreen_mode = self.root.attributes('-fullscreen')
+            self.checkbox_var.set(fullscreen_mode)  # Sync checkbox with actual fullscreen state
+
+            # Read the current settings from config.py
             with open(config_path, "r") as file:
                 for line in file:
-                    if line.startswith("printer_name ="):
+                    if line.startswith("printerName ="):
                         current_printer_name = line.split("=", 1)[1].strip().strip('"')
                         self.setting1.set(current_printer_name)
+                    elif line.startswith("templateNormal ="):
+                        current_template_normal = line.split("=", 1)[1].strip().strip('"')
+                        self.setting5.set(current_template_normal)
+                    elif line.startswith("templateLaptop ="):
+                        current_template_laptop = line.split("=", 1)[1].strip().strip('"')
+                        self.setting4.set(current_template_laptop)
+                    elif line.startswith("templateFilled ="):
+                        current_template_filled = line.split("=", 1)[1].strip().strip('"')
+                        self.setting6.set(current_template_filled)
                         break
         except Exception as e:
             self.show_error(f"Failed to load settings: {e}")
@@ -227,12 +244,6 @@ class ModernApp:
             self.input_entry.delete(0, "end")
             self.input_entry.insert(0, cleaned)
 
-    def fill_last_input(self):
-        if self.last_input:
-            self.input_entry.delete(0, "end")
-            self.input_entry.insert(0, self.last_input)
-
-    
     def process_input(self):
         user_input = self.input_entry.get()
         if len(user_input) != 7 or not user_input.isdigit():
@@ -244,9 +255,7 @@ class ModernApp:
         ticket_input = f"L{user_input}" if device_type == "Laptop" else user_input
         
         # Call backend processing
-        from LabelPrintingBackend import process_ticket
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        success, message = process_ticket(ticket_input, device_type, base_dir)
+        success, message = backend.process_ticket(self.baseUrl, self.headers, self.baseDir, user_input, device_type == "Laptop")
         
         if success:
             self.input_history.append(user_input)
@@ -275,8 +284,7 @@ class ModernApp:
             self.input_entry.insert(0, value)
         else:
             self.input_entry.delete(0, "end")  # Clear if past the end
-
-            
+ 
     def save_settings(self):
         # Update the printer_name in config.py
         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
@@ -284,15 +292,15 @@ class ModernApp:
             with open(config_path, "r") as file:
                 lines = file.readlines()
             
-            # Check if public_key or private_key has been modified
+            # Check if publicKey or privateKey has been modified
             public_key_changed = False
             private_key_changed = False
             for line in lines:
                 if self.setting2.get():  # Only check if setting2 is not empty
-                    if line.startswith("public_key =") and f'"{self.setting2.get()}"' not in line:
+                    if line.startswith("publicKey =") and f'"{self.setting2.get()}"' not in line:
                         public_key_changed = True
                 if self.setting3.get():  # Only check if setting3 is not empty
-                    if line.startswith("private_key =") and f'"{self.setting3.get()}"' not in line:
+                    if line.startswith("privateKey =") and f'"{self.setting3.get()}"' not in line:
                         private_key_changed = True
 
             # If either key is changed, prompt for a password
@@ -335,17 +343,26 @@ class ModernApp:
         config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
         with open(config_path, "w") as file:
             for line in lines:
-                if line.startswith("printer_name ="):
-                    file.write(f'printer_name = "{self.setting1.get()}"\n')
+                if line.startswith("printerName ="):
+                    file.write(f'printerName = "{self.setting1.get()}"\n')
                     print(f"Printer Name: {self.setting1.get()}")
-                elif line.startswith("public_key =") and public_key_changed:
-                    file.write(f'public_key = "{self.setting2.get()}"\n')
+                elif line.startswith("publicKey =") and public_key_changed:
+                    file.write(f'publicKey = "{self.setting2.get()}"\n')
                     print(f"Public Key: {self.setting2.get()}")
                     self.setting2.set("")  # Clear the entry after saving
-                elif line.startswith("private_key =") and private_key_changed:
-                    file.write(f'private_key = "{self.setting3.get()}"\n')
+                elif line.startswith("privateKey =") and private_key_changed:
+                    file.write(f'privateKey = "{self.setting3.get()}"\n')
                     print(f"Private Key: {self.setting3.get()}")
                     self.setting3.set("")  # Clear the entry after saving
+                elif line.startswith("templateLaptop ="):
+                    file.write(f'templateLaptop = "{self.setting4.get()}"\n')
+                    print(f"Laptop Template: {self.setting4.get()}")
+                elif line.startswith("templateNormal ="):
+                    file.write(f'templateNormal = "{self.setting5.get()}"\n')
+                    print(f"Normal Template: {self.setting5.get()}")
+                elif line.startswith("templateFilled ="):
+                    file.write(f'templateFilled = "{self.setting6.get()}"\n')
+                    print(f"Completed File Name: {self.setting6.get()}")
                 else:
                     file.write(line)
 
@@ -380,7 +397,7 @@ class ModernApp:
 
 def main():
     root = ctk.CTk()
-    app = ModernApp(root)
+    app = LabelPrinterApp(root)
     root.mainloop()
 
 if __name__ == "__main__":

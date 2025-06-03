@@ -121,7 +121,6 @@ def print_label(filePath):
     except Exception as e:
         return False, f"Printing failed: {str(e)}"
     
-
 def process_ticket(baseUrl, headers, baseDir, ticketId, laptop=False):
     # Fetch client name from the service ticket
     clientName = fetch_client(baseUrl, headers, ticketId)
