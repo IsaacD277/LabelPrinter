@@ -45,12 +45,12 @@ A modern Python application for printing equipment sheet labels using ConnectWis
 Run the application:
 
 ```sh
-python LabelPrinting - Frontend.py
+python LabelPrinting_Frontend.py
 ```
 
 - Enter a 7-digit ticket number and select the device type.
 - Click **Submit** to print the label.
-- Use the **Settings** button to change the printer or API keys.
+- Use the **Settings** button to change the printer, API keys, and Template File Names.
 - Use **Escape** to exit fullscreen.
 
 ### Console-Only Version
@@ -58,7 +58,7 @@ python LabelPrinting - Frontend.py
 A console-only version is also available for use without a GUI:
 
 ```sh
-python "LabelPrinting - Console Version.py"
+python "LabelPrinting_ConsoleVersion.py"
 ```
 
 Follow the prompts in the terminal to print labels. Use a capital "L" to specify a laptop label instead of the default label layout. Type "end" to close the program.
@@ -70,16 +70,18 @@ Follow the prompts in the terminal to print labels. Use a capital "L" to specify
 
 ## File Structure
 
-- `LabelPrinting - Frontend.py` — Main GUI application.
-- `LabelPrinting - Backend.py` — Handles API calls and label generation/printing.
-- `config.py` — Stores API credentials and printer name.
-- `.gitignore` — Ignores sensitive files like `config.py`.
+- `LabelPrinting_Frontend.py` - Main GUI application.
+- `LabelPrinting_Backend.py` - Handles API calls and label generation/printing.
+- `LabelPrinting_ConsoleVersion.py` - Console version of the GUI
+- **TEMPLATE FILES** - The "Normal" and "Laptop" versions of the template
+- `config.py` - Stores API credentials and printer name
+- `.gitignore` - Ignores sensitive files like `config.py`
 
 ## Troubleshooting
 
 - **Printing issues:** Ensure the printer name in `config.py` matches your Windows printer.
 - **API errors:** Double-check API keys and ConnectWise permissions.
-- **Template not found:** Ensure the correct template files are present in the project directory.
+- **Template not found:** Ensure the correct template files are present in the project directory and the config names match.
 
 ## License
 
@@ -87,4 +89,4 @@ This project is for internal use. Contact the project maintainers for licensing 
 
 ---
 
-*For support, contact Isaac D2.*
+*For support, contact Isaac D2. hi@isaacd2.com*

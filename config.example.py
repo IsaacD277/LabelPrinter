@@ -14,3 +14,8 @@ private_key = "paste_your_private_key_here"
 
 # This must match the name of the printer in your Printers & Scanners settings in Windows.
 printer_name = "paste_your_printer_name_here"
+
+# Edit these as needed, but these are the default file names for the templates.
+templateNormal = "ETS EQUIPMENT SHEET TEMPLATE - Normal.docx"
+templateLaptop = "ETS EQUIPMENT SHEET TEMPLATE - Laptop.docx"
+templateFilled = "ETS EQUIPMENT SHEET - Filled.docx"
