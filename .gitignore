@@ -1,4 +1,7 @@
 .env
+.env.bat
 config.py
 ETS EQUIPMENT SHEET - Filled.docx
 __pycache__/
+logs/
+test.txt

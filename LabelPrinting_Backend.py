@@ -2,17 +2,18 @@ from docx import Document
 from docx.shared import Pt
 from datetime import datetime
 import win32api
-import config
 import requests
 import os
 
-def initialize():
+def initialize(config):
     # Initialize API base URL and headers
-    baseUrl = "http://na.myconnectwise.net/v4_6_release/apis/3.0"
-    clientId = config.clientId
-    loginCompany = config.loginCompany
-    publicKey = config.publicKey
-    privateKey = config.privateKey
+    baseUrl = config['CONNECTWISE_BASE_URL']
+    clientId = config['CLIENT_ID']
+    loginCompany = config['LOGIN_COMPANY']
+    publicKey = config['PUBLIC_KEY']
+    privateKey = config['PRIVATE_KEY']
+
+    # Build authentication
     auth = (f"{loginCompany}+{publicKey}", privateKey)
     headers = {
         "clientID": clientId,
@@ -20,7 +21,7 @@ def initialize():
     }
 
     # Initialize base directory for templates
-    baseDir = os.path.dirname(os.path.abspath(__file__))
+    baseDir = config['BASE_DIR']
 
     return baseUrl, headers, baseDir
 
@@ -57,12 +58,12 @@ def fetch_client(baseUrl, headers, ticketId):
     return clientName
 
 def update_Word_document(baseDir, ticketNumber, clientName, laptop = False):
-    outputPath = os.path.join(baseDir, config.templateFilled)
+    outputPath = os.path.join(baseDir, os.environ.get('TEMPLATE_FILLED'))
     date = datetime.now().strftime("%m/%d/%y")
 
     # Update the Laptop Word document with details for laptops
     if laptop:
-        templatePath = os.path.join(baseDir, config.templateLaptop)
+        templatePath = os.path.join(baseDir, os.environ.get("TEMPLATE_LAPTOP"))
         doc = Document(templatePath)
 
         # Replace placeholders in the document
@@ -88,7 +89,7 @@ def update_Word_document(baseDir, ticketNumber, clientName, laptop = False):
 
     # Print the Word document with details for "Normal" boxes
     else:
-        templatePath = os.path.join(baseDir, config.templateNormal)
+        templatePath = os.path.join(baseDir, os.environ.get('TEMPLATE_NORMAL'))
         doc = Document(templatePath)
 
         # Replace placeholders in the document
@@ -116,7 +117,7 @@ def update_Word_document(baseDir, ticketNumber, clientName, laptop = False):
 
 def print_label(filePath):
     try:
-        win32api.ShellExecute(0, "printto", filePath, f'"{config.printerName}"', ".", 0)
+        win32api.ShellExecute(0, "printto", filePath, f'"{os.environ.get('PRINTER_NAME')}"', ".", 0)
         return True, "Ticket processed and printed successfully"
     except Exception as e:
         return False, f"Printing failed: {str(e)}"
@@ -130,5 +131,8 @@ def process_ticket(baseUrl, headers, baseDir, ticketId, laptop=False):
 
     # Print to label printer
     success, message = print_label(outputPath)
-    
-    return success, message
+
+    if success:
+        return True, f"Ticket #{ticketId} printed successfully"
+    else:
+        return False, f"Attempted to print ticket #{ticketId}. {message}"

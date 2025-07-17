@@ -35,7 +35,7 @@ class LabelPrinterApp:
         
         self.settings_frame.place_forget()
 
-        baseUrl, headers, baseDir = backend.initialize()
+        self.baseUrl, self.headers, self.baseDir = backend.initialize()
         
     def create_main_frame(self):
         self.main_frame = ctk.CTkFrame(self.root, corner_radius=10)
